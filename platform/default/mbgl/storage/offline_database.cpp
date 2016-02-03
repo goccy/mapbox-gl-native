@@ -294,4 +294,93 @@ void OfflineDatabase::putTile(const Resource::TileData& tile, const Response& re
     }
 }
 
+std::vector<OfflineRegion> OfflineDatabase::listRegions() {
+    mapbox::sqlite::Statement& stmt = getStatement(
+        "SELECT id, definition, description FROM regions");
+
+    std::vector<OfflineRegion> result;
+
+    while (stmt.run()) {
+        result.push_back(OfflineRegion(
+            stmt.get<int64_t>(0),
+            decodeOfflineRegionDefinition(stmt.get<std::string>(1)),
+            stmt.get<std::vector<uint8_t>>(2)));
+    }
+
+    return std::move(result);
+}
+
+OfflineRegion OfflineDatabase::createRegion(const OfflineRegionDefinition& definition,
+                                            const OfflineRegionMetadata& metadata) {
+    mapbox::sqlite::Statement& stmt = getStatement(
+        "INSERT INTO regions (definition, description) "
+        "VALUES              (?1,         ?2) ");
+
+    stmt.bind(1, encodeOfflineRegionDefinition(definition));
+    stmt.bind(2, metadata);
+    stmt.run();
+
+    return OfflineRegion(db->lastInsertRowid(), definition, metadata);
+}
+
+void OfflineDatabase::deleteRegion(OfflineRegion&& region) {
+    mapbox::sqlite::Statement& stmt = getStatement(
+        "DELETE FROM regions WHERE id = ?");
+
+    stmt.bind(1, region.getID());
+    stmt.run();
+}
+
+optional<Response> OfflineDatabase::getRegionResource(int64_t regionID, const Resource& resource) {
+    auto response = get(resource);
+
+    if (response) {
+        markUsed(regionID, resource);
+    }
+
+    return response;
+}
+
+void OfflineDatabase::putRegionResource(int64_t regionID, const Resource& resource, const Response& response) {
+    put(resource, response);
+    markUsed(regionID, resource);
+}
+
+void OfflineDatabase::markUsed(int64_t regionID, const Resource& resource) {
+    if (resource.kind == Resource::Kind::Tile) {
+        mapbox::sqlite::Statement& stmt1 = getStatement(
+            "REPLACE INTO region_tiles (region_id, tileset_id,  x,  y,  z) "
+            "SELECT                     ?1,        tilesets.id, ?4, ?5, ?6 "
+            "FROM tilesets "
+            "WHERE url_template = ?2 "
+            "AND pixel_ratio    = ?3 ");
+
+        stmt1.bind(1, regionID);
+        stmt1.bind(2, (*resource.tileData).urlTemplate);
+        stmt1.bind(3, (*resource.tileData).pixelRatio);
+        stmt1.bind(4, (*resource.tileData).x);
+        stmt1.bind(5, (*resource.tileData).y);
+        stmt1.bind(6, (*resource.tileData).z);
+        stmt1.run();
+    } else {
+        mapbox::sqlite::Statement& stmt1 = getStatement(
+            "REPLACE INTO region_resources (region_id, resource_url) "
+            "VALUES                        (?1,        ?2) ");
+
+        stmt1.bind(1, regionID);
+        stmt1.bind(2, resource.url);
+        stmt1.run();
+    }
+}
+
+OfflineRegionDefinition OfflineDatabase::getRegionDefinition(int64_t regionID) {
+    mapbox::sqlite::Statement& stmt = getStatement(
+        "SELECT definition FROM regions WHERE id = ?1");
+
+    stmt.bind(1, regionID);
+    stmt.run();
+
+    return decodeOfflineRegionDefinition(stmt.get<std::string>(1));
+}
+
 } // namespace mbgl

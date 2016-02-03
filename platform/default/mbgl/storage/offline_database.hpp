@@ -2,6 +2,7 @@
 #define MBGL_OFFLINE_DATABASE
 
 #include <mbgl/storage/resource.hpp>
+#include <mbgl/storage/offline.hpp>
 #include <mbgl/util/noncopyable.hpp>
 #include <mbgl/util/optional.hpp>
 
@@ -29,6 +30,18 @@ public:
     optional<Response> get(const Resource&);
     void put(const Resource&, const Response&);
 
+    std::vector<OfflineRegion> listRegions();
+
+    OfflineRegion createRegion(const OfflineRegionDefinition&,
+                               const OfflineRegionMetadata&);
+
+    void deleteRegion(OfflineRegion&&);
+
+    optional<Response> getRegionResource(int64_t regionID, const Resource&);
+    void putRegionResource(int64_t regionID, const Resource&, const Response&);
+
+    OfflineRegionDefinition getRegionDefinition(int64_t regionID);
+
 private:
     void ensureSchema();
     void removeExisting();
@@ -39,6 +52,8 @@ private:
 
     optional<Response> getResource(const Resource&);
     void putResource(const Resource&, const Response&);
+
+    void markUsed(int64_t regionID, const Resource&);
 
     const std::string path;
     std::unique_ptr<::mapbox::sqlite::Database> db;
