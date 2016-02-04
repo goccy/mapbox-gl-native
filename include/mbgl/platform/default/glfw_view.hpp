@@ -51,6 +51,9 @@ private:
     makeSpriteImage(int width, int height, float pixelRatio);
 
     void nextOrientation();
+    void toggleClipMasks();
+
+    void renderClipMasks();
 
     void addRandomPointAnnotations(int count);
     void addRandomShapeAnnotations(int count);
@@ -79,6 +82,8 @@ private:
     int fbWidth;
     int fbHeight;
     float pixelRatio;
+
+    bool showClipMasks = false;
 
     double lastX = 0, lastY = 0;
 
