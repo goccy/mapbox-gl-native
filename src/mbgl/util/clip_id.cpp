@@ -31,18 +31,47 @@ bool ClipIDGenerator::Leaf::operator==(const Leaf &other) const {
     return tile.id == other.tile.id && children == other.children;
 }
 
+
+
+using Iterator = std::forward_list<Tile*>::const_iterator;
+
+inline Iterator lower_bound(const Iterator& begin, const Iterator& end, const TileID& id) {
+    for (auto lower = begin; lower != end; ++lower) {
+        if (!((*lower)->id < id)) {
+            return lower;
+        }
+    }
+    return end;
+}
+
+bool coveredByChildren(const Iterator begin, const Iterator end) {
+    for (const auto& child : (*begin)->id.children()) {
+        const auto lower = lower_bound(begin, end, child);
+        if (lower == end || ((*lower)->id != child && !coveredByChildren(lower, end))) {
+            return false;
+        }
+    }
+
+    // We looked at all four immediate children and verified that they're covered.
+    return true;
+}
+
 void ClipIDGenerator::update(std::forward_list<Tile*> tiles) {
+    util::erase_after_if(tiles, [](auto t) { return t == nullptr; });
     tiles.sort([](const Tile* a, const Tile* b) { return a->id < b->id; });
+
+    // Remove parents from the list that are entirely covered by their children.
+    for (auto it = tiles.before_begin(), next = it;
+         it != tiles.end() && (next = std::next(it)) != tiles.end(); ++it) {
+        if (coveredByChildren(next, tiles.end())) {
+            tiles.erase_after(it);
+        }
+    }
 
     std::size_t size = 0;
 
     const auto end = tiles.end();
     for (auto it = tiles.begin(); it != end; it++) {
-        if (!*it) {
-            // Handle null pointers.
-            continue;
-        }
-
         Tile& tile = **it;
         Leaf leaf{ tile };
 

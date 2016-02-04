@@ -6,6 +6,19 @@
 #include <mbgl/util/clip_id.hpp>
 #include <mbgl/map/tile.hpp>
 
+namespace mbgl {
+
+::std::ostream& operator<<(::std::ostream& os, const ClipID& clip) {
+    return os << "ClipID(mask=" << clip.mask.to_string() << ", ref=" << clip.reference.to_string()
+              << ")";
+}
+
+::std::ostream& operator<<(::std::ostream& os, const TileID& id) {
+    return os << "[" << (int)id.z << "/" << id.x << "/" << id.y << "]";
+}
+
+} // namespace mbgl
+
 using namespace mbgl;
 
 using Stencil = std::pair<const TileID, ClipID>;
@@ -53,23 +66,22 @@ TEST(ClipIDs, ParentAndFourChildren) {
     generate(generator, sources);
     // print(sources);
 
-    ASSERT_EQ(ClipID("00000111", "00000010"), sources[0][0]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000011"), sources[0][1]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000100"), sources[0][2]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000101"), sources[0][3]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000001"), sources[0][4]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000001"), sources[0][0]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000010"), sources[0][1]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000011"), sources[0][2]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000100"), sources[0][3]->clip);
+    ASSERT_EQ(ClipID("00000000", "00000000"), sources[0][4]->clip); // covered by children
 
     const auto stencils = generator.getStencils();
     // print(stencils);
 
     auto it = stencils.begin();
     ASSERT_EQ(4, stencils.size());
-    ASSERT_EQ(Stencil(TileID{ 1, 0, 0, 1 }, { "00000111", "00000010"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 1, 0, 1, 1 }, { "00000111", "00000011"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 1, 1, 0, 1 }, { "00000111", "00000100"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 1, 1, 1, 1 }, { "00000111", "00000101"}), *it++);
+    ASSERT_EQ(Stencil(TileID{ 1, 0, 0, 1 }, { "00000111", "00000001" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 1, 0, 1, 1 }, { "00000111", "00000010" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 1, 1, 0, 1 }, { "00000111", "00000011" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 1, 1, 1, 1 }, { "00000111", "00000100" }), *it++);
     ASSERT_EQ(stencils.end(), it);
-
 }
 
 TEST(ClipIDs, ParentAndFourChildrenNegative) {
@@ -87,21 +99,21 @@ TEST(ClipIDs, ParentAndFourChildrenNegative) {
     generate(generator, sources);
     // print(sources);
 
-    ASSERT_EQ(ClipID("00000111", "00000010"), sources[0][0]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000011"), sources[0][1]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000100"), sources[0][2]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000101"), sources[0][3]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000001"), sources[0][4]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000001"), sources[0][0]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000010"), sources[0][1]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000011"), sources[0][2]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000100"), sources[0][3]->clip);
+    ASSERT_EQ(ClipID("00000000", "00000000"), sources[0][4]->clip); // covered by children
 
     const auto stencils = generator.getStencils();
     // print(stencils);
 
     auto it = stencils.begin();
     ASSERT_EQ(4, stencils.size());
-    ASSERT_EQ(Stencil(TileID{ 1, -2, 0, 1 }, { "00000111", "00000010"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 1, -2, 1, 1 }, { "00000111", "00000011"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 1, -1, 0, 1 }, { "00000111", "00000100"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 1, -1, 1, 1 }, { "00000111", "00000101"}), *it++);
+    ASSERT_EQ(Stencil(TileID{ 1, -2, 0, 1 }, { "00000111", "00000001" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 1, -2, 1, 1 }, { "00000111", "00000010" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 1, -1, 0, 1 }, { "00000111", "00000011" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 1, -1, 1, 1 }, { "00000111", "00000100" }), *it++);
     ASSERT_EQ(stencils.end(), it);
 }
 
@@ -120,24 +132,23 @@ TEST(ClipIDs, NegativeParentAndMissingLevel) {
     generate(generator, sources);
     // print(sources);
 
-    ASSERT_EQ(ClipID("00000111", "00000001"), sources[0][0]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000100"), sources[0][1]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000011"), sources[0][2]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000101"), sources[0][3]->clip);
-    ASSERT_EQ(ClipID("00000111", "00000010"), sources[0][4]->clip);
+    ASSERT_EQ(ClipID("00000000", "00000000"), sources[0][0]->clip); // covered by children
+    ASSERT_EQ(ClipID("00000111", "00000011"), sources[0][1]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000010"), sources[0][2]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000100"), sources[0][3]->clip);
+    ASSERT_EQ(ClipID("00000111", "00000001"), sources[0][4]->clip);
 
     const auto stencils = generator.getStencils();
     // print(stencils);
 
     auto it = stencils.begin();
     ASSERT_EQ(4, stencils.size());
-    ASSERT_EQ(Stencil(TileID{ 2, -2, 0, 2 }, { "00000111", "00000010"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 2, -2, 1, 2 }, { "00000111", "00000011"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 2, -1, 0, 2 }, { "00000111", "00000100"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 2, -1, 1, 2 }, { "00000111", "00000101"}), *it++);
+    ASSERT_EQ(Stencil(TileID{ 2, -2, 0, 2 }, { "00000111", "00000001" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 2, -2, 1, 2 }, { "00000111", "00000010" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 2, -1, 0, 2 }, { "00000111", "00000011" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 2, -1, 1, 2 }, { "00000111", "00000100" }), *it++);
     ASSERT_EQ(stencils.end(), it);
 }
-
 
 TEST(ClipIDs, SevenOnSameLevel) {
     const std::vector<std::vector<std::shared_ptr<Tile>>> sources = {
@@ -201,37 +212,36 @@ TEST(ClipIDs, MultipleLevels) {
     generate(generator, sources);
     // print(sources);
 
-    ASSERT_EQ(ClipID("00001111", "00000001"), sources[0][0]->clip);
-    ASSERT_EQ(ClipID("00001111", "00000011"), sources[0][1]->clip);
-    ASSERT_EQ(ClipID("00001111", "00000100"), sources[0][2]->clip);
-    ASSERT_EQ(ClipID("00001111", "00001001"), sources[0][3]->clip);
-    ASSERT_EQ(ClipID("00001111", "00001011"), sources[0][4]->clip);
-    ASSERT_EQ(ClipID("00001111", "00001010"), sources[0][5]->clip);
-    ASSERT_EQ(ClipID("00001111", "00001100"), sources[0][6]->clip);
-    ASSERT_EQ(ClipID("00001111", "00000101"), sources[0][7]->clip);
-    ASSERT_EQ(ClipID("00001111", "00000110"), sources[0][8]->clip);
-    ASSERT_EQ(ClipID("00001111", "00000010"), sources[0][9]->clip);
-    ASSERT_EQ(ClipID("00001111", "00000111"), sources[0][10]->clip);
-    ASSERT_EQ(ClipID("00001111", "00001000"), sources[0][11]->clip);
+    ASSERT_EQ(ClipID("00000000", "00000000"), sources[0][0]->clip); // covered by children
+    ASSERT_EQ(ClipID("00001111", "00000010"), sources[0][1]->clip);
+    ASSERT_EQ(ClipID("00000000", "00000000"), sources[0][2]->clip); // covered by children
+    ASSERT_EQ(ClipID("00001111", "00000111"), sources[0][3]->clip);
+    ASSERT_EQ(ClipID("00001111", "00001001"), sources[0][4]->clip);
+    ASSERT_EQ(ClipID("00001111", "00001000"), sources[0][5]->clip);
+    ASSERT_EQ(ClipID("00001111", "00001010"), sources[0][6]->clip);
+    ASSERT_EQ(ClipID("00001111", "00000011"), sources[0][7]->clip);
+    ASSERT_EQ(ClipID("00001111", "00000100"), sources[0][8]->clip);
+    ASSERT_EQ(ClipID("00001111", "00000001"), sources[0][9]->clip);
+    ASSERT_EQ(ClipID("00001111", "00000101"), sources[0][10]->clip);
+    ASSERT_EQ(ClipID("00001111", "00000110"), sources[0][11]->clip);
 
     const auto stencils = generator.getStencils();
     // print(stencils);
 
     auto it = stencils.begin();
     ASSERT_EQ(10, stencils.size());
-    ASSERT_EQ(Stencil(TileID{ 2, 1, 0, 2 }, { "00001111", "00000010"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 3, 0, 0, 3 }, { "00001111", "00000011"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 3, 1, 0, 3 }, { "00001111", "00000101"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 3, 1, 1, 3 }, { "00001111", "00000110"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 3, 2, 0, 3 }, { "00001111", "00000111"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 3, 2, 1, 3 }, { "00001111", "00001000"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 4, 0, 2, 4 }, { "00001111", "00001001"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 4, 0, 3, 4 }, { "00001111", "00001010"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 4, 1, 2, 4 }, { "00001111", "00001011"}), *it++);
-    ASSERT_EQ(Stencil(TileID{ 4, 1, 3, 4 }, { "00001111", "00001100"}), *it++);
+    ASSERT_EQ(Stencil(TileID{ 2, 1, 0, 2 }, { "00001111", "00000001" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 3, 0, 0, 3 }, { "00001111", "00000010" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 3, 1, 0, 3 }, { "00001111", "00000011" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 3, 1, 1, 3 }, { "00001111", "00000100" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 3, 2, 0, 3 }, { "00001111", "00000101" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 3, 2, 1, 3 }, { "00001111", "00000110" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 4, 0, 2, 4 }, { "00001111", "00000111" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 4, 0, 3, 4 }, { "00001111", "00001000" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 4, 1, 2, 4 }, { "00001111", "00001001" }), *it++);
+    ASSERT_EQ(Stencil(TileID{ 4, 1, 3, 4 }, { "00001111", "00001010" }), *it++);
     ASSERT_EQ(stencils.end(), it);
 }
-
 
 TEST(ClipIDs, Bug206) {
     const std::vector<std::vector<std::shared_ptr<Tile>>> sources = {
@@ -343,7 +353,6 @@ TEST(ClipIDs, MultipleSources) {
     ASSERT_EQ(Stencil(TileID{ 2, 2, 2, 2 }, { "11111111", "10000100"}), *it++);
     ASSERT_EQ(stencils.end(), it);
 }
-
 
 TEST(ClipIDs, DuplicateIDs) {
     const std::vector<std::vector<std::shared_ptr<Tile>>> sources = {
