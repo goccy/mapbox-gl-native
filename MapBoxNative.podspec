@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   geojsonvt          = "#{mason_packages}/ios-9.2/geojsonvt/3.1.0/include"
   libuv              = "#{mason_packages}/ios-9.2/libuv/1.7.5/include"
   
-  header_search_path = "#{mapbox_root}/include #{mapbox_root}/src #{variant} #{rapidjson} #{boost} #{geojsonvt} #{libuv}"
+  header_search_path = "#{mapbox_root} #{mapbox_root}/include #{mapbox_root}/src #{variant} #{rapidjson} #{boost} #{geojsonvt} #{libuv}"
   
   s.xcconfig = {
     HEADER_SEARCH_PATHS: header_search_path
@@ -29,7 +29,7 @@ Pod::Spec.new do |s|
   s.ios.libraries  = 'c++', 'z', 'sqlite3'
 
   s.subspec 'source' do |ss|
-    ss.source_files = "include/**/*.hpp", "src/**/*.{hpp,cpp}"
+    ss.source_files = "*.{hpp,cpp}", "include/**/*.hpp", "src/**/*.{hpp,cpp}"
   end
   
 end
