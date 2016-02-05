@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
 
-  mapbox_root    = "$(PODS_ROOT)/../../../mapbox-gl-native"
+  mapbox_root    = "$(PODS_ROOT)/../mapbox-gl-native"
   s.name         = "MapBoxNative"
   s.version      = "0.0.1"
   s.summary      = ""
