@@ -57,7 +57,6 @@ HTTPNSURLContext::HTTPNSURLContext() {
         sessionConfig.URLCache = nil;
 
         session = [NSURLSession sessionWithConfiguration:sessionConfig];
-        [session retain];
 
         // Write user agent string
         userAgent = @"MapboxGL";
@@ -67,10 +66,8 @@ HTTPNSURLContext::HTTPNSURLContext() {
 }
 
 HTTPNSURLContext::~HTTPNSURLContext() {
-    [session release];
     session = nullptr;
 
-    [userAgent release];
     userAgent = nullptr;
 }
 
@@ -116,7 +113,7 @@ HTTPNSURLRequest::HTTPNSURLRequest(HTTPNSURLContext* context_,
               completionHandler:^(NSData* data, NSURLResponse* res, NSError* error) {
                 handleResult(data, res, error);
               }];
-        [task retain];
+
         [task resume];
     }
 }
@@ -128,7 +125,7 @@ HTTPNSURLRequest::~HTTPNSURLRequest() {
 
 void HTTPNSURLRequest::handleResponse() {
     if (task) {
-        [task release];
+
         task = nullptr;
     }
 
@@ -145,7 +142,6 @@ void HTTPNSURLRequest::cancel() {
 
     if (task) {
         [task cancel];
-        [task release];
         task = nullptr;
     } else {
         delete this;
